@@ -1,0 +1,2 @@
+{"level":"error","message":"Invalid authentication","service":"login-service","timestamp":"2024-03-10 13:18:51"}
+{"body":{"mail":"user1@gmail.com"},"ip":"::1","level":"error","message":"Invalid authentication","service":"login-service","timestamp":"2024-03-10 13:33:02","url":"/connection"}
