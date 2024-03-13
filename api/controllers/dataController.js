@@ -4,8 +4,10 @@ const jwt = require('jsonwebtoken');
 const data = require("../data.json");
 const _ = require("lodash")
 let blogMessages = [];
-const winston = require('winston');
 const path = require('path');
+
+//logging system ,content in error.log file
+const winston = require('winston');
 const logger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(
@@ -20,6 +22,15 @@ const logger = winston.createLogger({
      
     ],
 });
+
+//hash method
+function badHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash += str.charCodeAt(i);
+    }
+    return hash % 10; //will an output from 0-9 ,10 % collision rate
+}
 
 exports.connectUser = (req, res) => {
     let body = req.body
@@ -45,29 +56,20 @@ exports.connectUser = (req, res) => {
             });
             res.status(404).send('This user does not exist');
         } else {
-            bcrypt.compare(body.password, user.password, function (error, result) {
-                if (error) {
-                logger.error('Error while comparing the password', {
-                        ip: req.ip,
-                        url: req.originalUrl,
-                        body: _.omit(req.body, ['password']), // omit the password for security reasons
-                    });
-                    res.status(500).send(error + '. Please contact the webmaster')
-                } else if (result) {
-                    const token = jwt.sign({ user_id: user.id, user_role: user.role }, process.env.ACCESS_TOKEN_SECRET);
-                    res.status(200).json({ token, role: user.role })
-                } else {
-                    logger.error('Invalid authentication', {
-                        ip: req.ip,
-                        url: req.originalUrl,
-                        body: _.omit(req.body, ['password']), // omit the password for security reasons
-                    });
-                    res.status(403).send('Invalid authentication')
-                }
-            });
+            if (badHash(body.password) == user.password) {
+                const token = jwt.sign({ user_id: user.id, user_role: user.role }, process.env.ACCESS_TOKEN_SECRET);
+                res.status(200).json({ token, role: user.role })
+            } else {
+                logger.error('Invalid authentication', {
+                    ip: req.ip,
+                    url: req.originalUrl,
+                    body: _.omit(req.body, ['password']), // omit the password for security reasons
+                });
+                res.status(403).send('Invalid authentication')
+            }
         }
     }
-}
+};
 
 exports.fetchDataUser = (req, res) => {
     let usr = null
